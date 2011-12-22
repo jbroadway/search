@@ -28,7 +28,7 @@ switch ($appconf['Search']['backend']) {
 
 		$client = new Elastica_Client (array ('servers' => $servers));
 
-		$res = $client->deleteIds (array ($this->data['page']), 'pages', 'webpage');
+		$res = $client->deleteIds (array ($this->data['page']), 'webpages', 'webpage');
 		if ($res->isOk ()) {
 			return 200;
 		}
