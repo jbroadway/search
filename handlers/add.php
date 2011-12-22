@@ -4,13 +4,15 @@ if (! $this->internal) {
 	die ('Cannot add document from a browser.');
 }
 
-$failed = Form::verify_values ($this->data, 'apps/search/forms/add.php');
+$f = new Form;
+$failed = $f->verify_values ($this->data, 'apps/search/forms/add.php');
 if (count ($failed) > 0) {
 	die ('Validation error on fields: ' . join (', ', $failed));
 }
 		
 $body = trim (strip_tags ($this->data['body']));
-$description = array_shift (explode ('.', $body));
+$exploded = explode ('.', $body);
+$description = array_shift ($exploded);
 if (strlen ($description) > 160) {
 	$description = substr ($description, 0, 157) . '...';
 }
