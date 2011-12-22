@@ -1,11 +1,11 @@
 <?php
 
 if (! $this->internal) {
-	//die ('Cannot add document from a browser.');
+	die ('Cannot add document from a browser.');
 }
 
 if (! isset ($this->data['page']) || empty ($this->data['page'])) {
-	//die ('Missing required field: page');
+	die ('Missing required field: page');
 }
 
 switch ($appconf['Search']['backend']) {
@@ -19,11 +19,22 @@ switch ($appconf['Search']['backend']) {
 		return $index->delete_document ($this->data['page']);
 
 	case 'elasticsearch':
-		require_once ('apps/search/lib/elasticsearch_autoloader.php');
+		require_once ('apps/search/lib/elastica_autoloader.php');
 
-		$client = new Elastica_Client (array ('servers' => $appconf['ElasticSearch']));
+		$servers = array ();
+		foreach ($appconf['ElasticSearch'] as $server) {
+			$servers[] = $server;
+		}
 
-		return $client->deleteIds (array ($this->data['page']), 'pages', 'webpage');
+		$client = new Elastica_Client (array ('servers' => $servers));
+
+		$res = $client->deleteIds (array ($this->data['page']), 'pages', 'webpage');
+		if ($res->isOk ()) {
+			return 200;
+		}
+		error_log ($res->getError ());
+		return 500;
+		break;
 
 	default:
 		error_log ('Unknown search backend: ' . $appconf['Search']['backend']);
