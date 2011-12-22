@@ -1,6 +1,6 @@
-<form id="search-form">
+<form id="search-form" action="/search" method="get">
 <p>
-	<input id="search-query" type="text" value="{{ query }}" />
+	<input id="search-query" name="query" type="text" value="{{ query }}" />
 	<input type="submit" value="{" Search "}" />
 </p>
 </form>
