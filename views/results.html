@@ -10,8 +10,10 @@
 <div id="search-results">
 {% foreach results %}
 	<div class="search-result">
-		<h3><a href="{{ loop_value.url }}">{{ loop_value.title }}</a></h3>
-		<p>{{ loop_value.description }}</p>
+		<p>
+			<strong class="title"><a href="{{ loop_value->url }}">{{ loop_value->title }}</a></strong><br />
+			<span class="description">{{ loop_value->description }}</span></span>
+		</p>
 	</div>
 {% end %}
 </div>

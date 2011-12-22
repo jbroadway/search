@@ -31,6 +31,10 @@ switch ($appconf['Search']['backend']) {
 		return;
 
 	case 'elasticsearch':
+		if (! $this->internal) {
+			$page->title = i18n_get ('Search');
+		}
+
 		if ($_GET['query']) {
 			require_once ('apps/search/lib/elastica_autoloader.php');
 	
@@ -44,18 +48,27 @@ switch ($appconf['Search']['backend']) {
 			$type = $index->getType ('webpage');
 
 			$query = new Elastica_Query_Terms ();
-			$query->setTerms ('title' => explode (' ', trim ($_GET['query'])));
+			$query->setTerms ('title', explode (' ', trim ($_GET['query'])));
 			$res = $type->search ($query);
+
+			$results = array ();
+			foreach ($res as $row) {
+				$results[] = (object) array (
+					'url' => $row->url,
+					'title' => $row->title,
+					'description' => $row->description
+				);
+			}
 
 			$total = $res->count ();
 
 			echo $tpl->render ('search/results', array (
-				'results' => $res,
+				'results' => $results,
 				'total' => $total,
 				'query' => $_GET['query']
 			));
 		} else {
-			echo $tpl->render ('search/index');
+			echo $tpl->render ('search/elastic');
 		}
 		return;
 
