@@ -47,8 +47,7 @@ switch ($appconf['Search']['backend']) {
 			$index = $client->getIndex ('webpages');
 			$type = $index->getType ('webpage');
 
-			$query = new Elastica_Query_Terms ();
-			$query->setTerms ('title', explode (' ', trim ($_GET['query'])));
+			$query = new Elastica_Query_QueryString ($_GET['query']);
 			$res = $type->search ($query);
 
 			$results = array ();
