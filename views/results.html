@@ -1,0 +1,17 @@
+<form id="search-form">
+<p>
+	<input id="search-query" type="text" value="{{ query }}" />
+	<input type="submit" value="{" Search "}" />
+</p>
+</form>
+
+<p>{" Results "}: {{ total }}</p>
+
+<div id="search-results">
+{% foreach results %}
+	<div class="search-result">
+		<h3><a href="{{ loop_value.url }}">{{ loop_value.title }}</a></h3>
+		<p>{{ loop_value.description }}</p>
+	</div>
+{% end %}
+</div>
