@@ -25,3 +25,11 @@ blog/delete[] = search/delete
 
 Or add it to a page on your site by clicking the Dynamic Objects button in the
 wysiwyg editor and choosing "Search: Search Box".
+
+## IndexTank hosts
+
+Here are some companies that provide hosted IndexTank services to make it easier to get started:
+
+* [Searchify](http://www.searchify.com/)
+* [HoundSleuth](http://www.houndsleuth.com/)
+* [IndexTank To Go](http://launch.indextanktogo.com/)
