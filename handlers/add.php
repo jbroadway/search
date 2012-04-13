@@ -7,7 +7,8 @@ if (! $this->internal) {
 $f = new Form;
 $failed = $f->verify_values ($this->data, 'apps/search/forms/add.php');
 if (count ($failed) > 0) {
-	die ('Validation error on fields: ' . join (', ', $failed));
+	error_log ('Validation error on fields: ' . join (', ', $failed));
+	return;
 }
 		
 $body = trim (strip_tags ($this->data['body']));

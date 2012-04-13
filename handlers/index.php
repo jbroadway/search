@@ -2,32 +2,37 @@
 
 switch ($appconf['Search']['backend']) {
 	case 'indextank':
-		$page->add_script ('<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
-		<script type="text/javascript" src="/apps/search/js/indextank/jquery.indextank.ize.js"></script>
-		<script type="text/javascript" src="/apps/search/js/indextank/jquery.indextank.autocomplete.js"></script>
-		<script type="text/javascript" src="/apps/search/js/indextank/jquery.indextank.ajaxsearch.js"></script>
-		<script type="text/javascript" src="/apps/search/js/indextank/jquery.indextank.renderer.js"></script>
-		<script type="text/javascript" src="/apps/search/js/indextank/jquery.indextank.instantsearch.js"></script>
-		<script type="text/javascript" src="/apps/search/js/indextank/jquery.indextank.basic.js"></script>
-		<link type="text/css" rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/themes/' . $appconf['jQuery']['ui_theme'] . '/jquery-ui.css" media="all" />
-		<style type="text/css">
-		.result {
-			padding-bottom: 10px;
+		if (! $this->internal) {
+			$page->title = i18n_get ('Search');
 		}
-		.result a {
-			font-weight: bold;
-			display: block;
+
+		if ($_GET['query']) {
+			require_once ('apps/search/lib/indextank_client.php');
+
+			$client = new ApiClient ($appconf['IndexTank']['private_api_url']);
+			$index = $client->get_index ($appconf['IndexTank']['index_name']);
+
+			$res = $index->search ($_GET['query'], null, null, null, 'description', 'title,url');
+
+			$results = array ();
+			foreach ($res->results as $row) {
+				$results[] = (object) array (
+					'url' => $row->url,
+					'title' => html_entity_decode ($row->title, ENT_QUOTES, 'UTF-8'),
+					'description' => html_entity_decode ($row->description, ENT_QUOTES, 'UTF-8')
+				);
+			}
+
+			$total = $res->matches;
+
+			echo $tpl->render ('search/results', array (
+				'results' => $results,
+				'total' => $total,
+				'query' => $_GET['query']
+			));
+		} else {
+			echo $tpl->render ('search/form');
 		}
-		</style>
-		<script>
-		$(document).ready(function(){
-			$("#search-form").indextank_Ize(\'' . $appconf['IndexTank']['public_api_url'] . '\', \'' . $appconf['IndexTank']['index_name'] . '\');
-			var renderer =  $("#search-results").indextank_Renderer();
-			$("#search-query").indextank_Autocomplete().indextank_AjaxSearch( {listeners: renderer}).indextank_InstantSearch();
-		});
-		</script>');
-		
-		echo $tpl->render ('search/index');
 		return;
 
 	case 'elasticsearch':
@@ -67,7 +72,7 @@ switch ($appconf['Search']['backend']) {
 				'query' => $_GET['query']
 			));
 		} else {
-			echo $tpl->render ('search/elastic');
+			echo $tpl->render ('search/form');
 		}
 		return;
 
