@@ -17,7 +17,12 @@ switch ($appconf['Search']['backend']) {
 		$index = $client->get_index ($appconf['IndexTank']['index_name']);
 		
 		// hopefully 200!
-		return $index->delete_document ($this->data['page']);
+		try {
+			return $index->delete_document ($this->data['page']);
+		} catch (Exception $e) {
+			error_log ($e->getMessage ());
+			return 500;
+		}
 
 	case 'elasticsearch':
 		require_once ('apps/search/lib/elastica_autoloader.php');

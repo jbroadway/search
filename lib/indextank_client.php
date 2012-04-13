@@ -6,6 +6,7 @@
 class InvalidResponseFromServer extends Exception {}
 class TooManyIndexes extends Exception {}
 class IndexAlreadyExists extends Exception {}
+class IndexDoesNotExist extends Exception {}
 class InvalidQuery extends Exception {}
 class InvalidDefinition extends Exception {}
 class Unauthorized extends Exception {}
@@ -55,15 +56,24 @@ function api_call($method, $url, $params=array()) {
     $args = '';
     $sep = '';
     
-    if ($method == "GET") {
-        foreach ($params as $key => $val) {
-            $args .= $sep.$key.'='.urlencode($val);
-            $sep = '&';
+    if ( $params != NULL ) {
+        if ($method == "GET" or $method == "DELETE") {
+            foreach ($params as $key => $val) {
+                if ( is_array($val) ) {
+                    foreach ($val as $v) {
+                        $args .= $sep.$key.'='.urlencode($v);
+                        $sep = '&';
+                    }
+                } else {
+                    $args .= $sep.$key.'='.urlencode($val);
+                    $sep = '&';
+                }
+            }
+            $url .= '?'.$args;
+            $args = '';
+        } else {
+            $args = json_encode($params);
         }
-        $url .= '?'.$args;
-        $args = '';
-    } else {
-        $args = json_encode($params);
     }
 
     //print "url: " . $url . ": " . $args . "\n";
@@ -107,17 +117,21 @@ class ApiClient {
         return json_decode(api_call('GET', $this->indexes_url())->response);
     }
 
-    public function create_index($index_name) {
+    public function create_index($index_name, $options = NULL) {
         $index = $this->get_index($index_name);
-        $index->create_index();
+        $index->create_index($options);
+        return $index;
+    }
+
+    public function update_index($index_name, $options) {
+        $index = $this->get_index($index_name);
+        $index->update_index($options);
         return $index;
     }
 
     private function indexes_url() {
         return $this->api_url . '/v1/indexes';
     }
-    
-    
 
     private function index_url($index_name) {
         return $this->indexes_url() . "/" . urlencode($index_name);
@@ -171,14 +185,19 @@ class IndexClient {
         return $this->metadata->{'started'};
     }
 
+    public function get_status() {
+        $this->refresh_metadata();
+        return $this->metadata->{'status'};
+    }
+
     public function get_code() {
         $this->refresh_metadata();
-        return $this->metadata['code'];
+        return $this->metadata->{'code'};
     }
 
     public function get_size() {
         $this->refresh_metadata();
-        return $this->metadata['size'];
+        return $this->metadata->{'size'};
     }
 
     public function get_creation_time() {
@@ -186,24 +205,40 @@ class IndexClient {
         return $this->metadata->{'creation_time'};
     }
 
+    public function is_public_search_enabled() {
+        $this->refresh_metadata();
+        return $this->metadata->{'public_search'};
+    }
 
-    public function create_index() {
+    public function create_index($options = NULL) {
         /*
          * Creates this index. 
          * If it already existed a IndexAlreadyExists exception is raised. 
          * If the account has reached the limit a TooManyIndexes exception is raised
          */
         try {
-            $res = api_call('PUT', $this->index_url);
-            if ($res->status == 204) {
-                throw new IndexAlreadyExists('An index for the given name already exists');
+            if ( $this->exists() ){
+              throw new IndexAlreadyExists('An index for the given name doesn\'t exist');
             }
+            $res = api_call('PUT', $this->index_url, $options);
+
         } catch (HttpException $e) {
             if ($e->getCode() == 409) {
                 throw new TooManyIndexes($e->getMessage());
             }
             throw $e;
         }
+    }
+
+    public function update_index($options) {
+        /*
+         * Update this index. 
+         * If it doesn't exist a IndexDoesNotExist exception is raised. 
+         */
+        if ( ! $this->exists() ){
+          throw new IndexDoesNotExist('An index for the given name doesn\'t exist');
+        }
+        $res = api_call('PUT', $this->index_url, $options);
     }
 
     public function delete_index() {
@@ -274,6 +309,16 @@ class IndexClient {
          */
         $res = api_call('DELETE', $this->docs_url(), array("docid" => $docid));
         return $res->status;
+    }
+
+    public function delete_documents($docids) {
+        /*
+         * Deletes the given docids from the index if they existed. otherwise, does nothing.
+         * Arguments:
+         *     docids: unique document identifiers
+         */
+        $res = api_call('DELETE', $this->docs_url(), array("docid" => $docids));
+        return json_decode($res->response);
     }
 
     public function update_variables($docid, $variables) {
@@ -378,6 +423,58 @@ class IndexClient {
 
         try {
             $res = api_call('GET', $this->search_url(), $params);
+            return json_decode($res->response);
+        } catch (HttpException $e) {
+            if ($e->getCode() == 400) {
+                throw new InvalidQuery($e->getMessage());
+            }
+            throw $e;
+        }
+    }
+
+
+    /*
+     * Performs a delete on the results of a search.
+     *
+     * @param variables: An array with 'query variables'. Example: array( 0 => 3, 1 => 34);
+     * @param docvar_filters: An array with filters for document variables. 
+     *     Example: array(0 => array(array(1,4), array(6, 9), array(16,NULL)))
+     *     Document variable 0 should be between 1 and 4 OR 6 and 9 OR greater than 16
+     * @param function_filters: An array with filters for function scores. 
+     *     Example: array(2 => array(array(2,6), array(7, 11), array(15,NULL)))
+     *     Scoring function 2 must return a value between 2 and 6 OR 7 and 11 OR greater than 15 for documents matching this query.
+     *
+     */
+    public function delete_by_search($query, $start=NULL, $scoring_function=NULL, $category_filters=NULL, $variables=NULL, $docvar_filters=NULL, $function_filters=NULL) {
+        $params = array("q" => $query);
+        if ($start != NULL) { $params["start"] = $start; }
+        if ($scoring_function != NULL) { $params["function"] = (string)$scoring_function; }
+        if ($category_filters != NULL) { $params["category_filters"] = $category_filters; }
+        if ($variables) {
+            foreach( $variables as $k => $v)
+            {
+                $params["var".strval($k)] = $v;
+            }
+        }
+
+        if ($docvar_filters){
+            // $docvar_filters is something like
+            // { 3 => [ (1, 3), (5, NULL) ]} to filter_docvar3 => 1:3,5:*
+            foreach( $docvar_filters as $k => $v){
+                $params["filter_docvar".strval($k)] = implode(array_map( 'map_range', $v), ",");
+            }
+        }
+        
+        if ($function_filters){
+            // $function_filters is something like
+            // { 2 => [ (1, 4), (7, NULL) ]} to filter_function2 => 1:4,7:*
+            foreach( $docvar_filters as $k => $v){
+                $params["filter_function".strval($k)] = implode(array_map( 'map_range', $v), ",");
+            }
+        }
+
+        try {
+            $res = api_call('DELETE', $this->search_url(), $params);
             return json_decode($res->response);
         } catch (HttpException $e) {
             if ($e->getCode() == 400) {
