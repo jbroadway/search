@@ -5,7 +5,8 @@ if (! $this->internal) {
 }
 
 if (! isset ($this->data['page']) || empty ($this->data['page'])) {
-	die ('Missing required field: page');
+	error_log ('Missing required field: page');
+	return;
 }
 
 switch ($appconf['Search']['backend']) {
