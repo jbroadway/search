@@ -17,6 +17,16 @@ blog/edit[] = search/add
 blog/delete[] = search/delete
 ```
 
+Other apps may also have additional hooks that enable them to be added to the search, such as:
+
+```
+events/add[] = search/add
+events/edit[] = search/add
+events/delete[] = search/delete
+
+wiki/edit[] = search/add
+```
+
 4\. Either add a search box to your template with this tag:
 
 ```

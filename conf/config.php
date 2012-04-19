@@ -30,4 +30,9 @@ private_api_url = "http://:********************.api.indextank.com/"
 
 index_name = "********"
 
+[Admin]
+
+handler = search/admin
+name = Search
+
 ; */ ?>

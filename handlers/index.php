@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * This is the public-facing search engine page.
+ */
+
 switch ($appconf['Search']['backend']) {
 	case 'indextank':
 		if (! $this->internal) {
