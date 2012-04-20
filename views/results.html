@@ -5,7 +5,11 @@
 </p>
 </form>
 
-<p>{" Results "}: {{ total }}</p>
+{% if total > 0 %}
+<p>{{ total }} {"results"}:</p>
+{% else %}
+<p>{"No results."}</p>
+{% end %}
 
 <div id="search-results">
 {% foreach results %}
