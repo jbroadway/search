@@ -2,6 +2,10 @@
 
 [Search]
 
+; The layout to render the search results with
+
+layout = default
+
 ; To choose a back-end search engine, uncomment one of the following
 ; options:
 
