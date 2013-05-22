@@ -4,7 +4,8 @@ To install:
 
 1\. Unzip it into your apps folder
 
-2\. Edit the apps/search/conf/config.php and add your ElasticSearch servers or IndexTank credentials
+2\. Duplicate the file `apps/search/conf/config.php` to `conf/app.search.config.php` then edit that file
+and add your ElasticSearch servers or IndexTank credentials.
 
 3\. Add the following hooks to your global `conf/config.php`:
 
