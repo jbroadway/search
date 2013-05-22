@@ -24,32 +24,34 @@ if (isset ($_GET['index'])) {
 		->fetch_orig ();
 
 	foreach ($pages as $page) {
-		Search::add (
+		if (! Search::add (
 			$page->id,
 			array (
 				'title' => $page->title,
 				'text' => $page->body,
 				'url' => '/' . $page->id
 			)
-		);
+		)) {
+			return $this->error (500, 'An error occurred', Search::$error);
+		}
 	}
 
 	// Check for blog posts
-	require_once ('apps/blog/lib/Filters.php');
-
 	$posts = blog\Post::query ()
 		->where ('published', 'yes')
 		->fetch_orig ();
 
 	foreach ($posts as $post) {
-		Search::add (
-			'blog/post/' . $post->id . '/' . blog_filter_title ($post->title),
+		if (! Search::add (
+			'blog/post/' . $post->id . '/' . URLify::filter ($post->title),
 			array (
 				'title' => $post->title,
 				'text' => $post->body,
-				'url' => '/blog/post/' . $post->id . '/' . blog_filter_title ($post->title)
+				'url' => '/blog/post/' . $post->id . '/' . URLify::filter ($post->title)
 			)
-		);
+		)) {
+			return $this->error (500, 'An error occurred', Search::$error);
+		}
 	}
 
 	// Check for events
@@ -58,14 +60,16 @@ if (isset ($_GET['index'])) {
 			->fetch_orig ();
 	
 		foreach ($events as $event) {
-			Search::add (
-				'events/' . $event->id . '/' . blog_filter_title ($event->title),
+			if (! Search::add (
+				'events/' . $event->id . '/' . URLify::filter ($event->title),
 				array (
 					'title' => $event->title,
 					'text' => $event->details,
-					'url' => '/events/' . $event->id . '/' . blog_filter_title ($event->title)
+					'url' => '/events/' . $event->id . '/' . URLify::filter ($event->title)
 				)
-			);
+			)) {
+			return $this->error (500, 'An error occurred', Search::$error);
+		}
 		}
 	}
 
@@ -78,14 +82,16 @@ if (isset ($_GET['index'])) {
 			->fetch_orig ();
 	
 		foreach ($pages as $page) {
-			Search::add (
+			if (! Search::add (
 				'wiki/' . $page->id,
 				array (
 					'title' => str_replace ('-', ' ', $page->id),
 					'text' => wiki_parse_body ($page->body),
 					'url' => '/wiki/' . $page->id
 				)
-			);
+			)) {
+			return $this->error (500, 'An error occurred', Search::$error);
+		}
 		}
 	}
 

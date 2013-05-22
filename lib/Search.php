@@ -45,8 +45,8 @@ class Search {
 					$servers[] = $server;
 				}
 		
-				$client = new Elastica_Client (array ('servers' => $servers));
-				$index = $client->getIndex ('webpages');
+				self::$client = new Elastica_Client (array ('servers' => $servers));
+				self::$index = self::$client->getIndex ('webpages');
 				break;
 		}
 	}
@@ -92,8 +92,13 @@ class Search {
 			case 'elasticsearch':
 				$doc['id'] = $page;
 				$type = self::$index->getType ('webpage');
-				$doc = new Elastic_Document ($page, $doc);
-				$res = $type->addDocument ($doc);
+				$doc = new Elastica_Document ($page, $doc);
+				try {
+					$res = $type->addDocument ($doc);
+				} catch (Elastica_Exception_Client $e) {
+					self::$error = $e->getMessage ();
+					return false;
+				}
 				if ($res->isOk ()) {
 					self::$index->refresh ();
 					return true;
@@ -118,7 +123,12 @@ class Search {
 				return false;
 				break;
 			case 'elasticsearch':
-				$res = self::$client->deleteIds (array ($page), 'webpages', 'webpage');
+				try {
+					$res = self::$client->deleteIds (array ($page), 'webpages', 'webpage');
+				} catch (Elastica_Exception_Client $e) {
+					self::$error = $e->getMessage ();
+					return false;
+				}
 				if ($res->isOk ()) {
 					self::$index->refresh ();
 					return true;
