@@ -4,6 +4,11 @@
  * This is the public-facing search engine page.
  */
 
+if ($this->cli) {
+	echo $this->run ('search/cli');
+	return;
+}
+
 switch ($appconf['Search']['backend']) {
 	case 'indextank':
 		if (! $this->internal) {

@@ -18,80 +18,14 @@ if (isset ($_GET['index'])) {
 
 	Search::init ($appconf);
 
-	// Check for pages
-	$pages = Webpage::query ()
-		->where ('access', 'public')
-		->fetch_orig ();
-
-	foreach ($pages as $page) {
-		if (! Search::add (
-			$page->id,
-			array (
-				'title' => $page->title,
-				'text' => $page->body,
-				'url' => '/' . $page->id
-			)
-		)) {
-			return $this->error (500, 'An error occurred', Search::$error);
-		}
-	}
-
-	// Check for blog posts
-	$posts = blog\Post::query ()
-		->where ('published', 'yes')
-		->fetch_orig ();
-
-	foreach ($posts as $post) {
-		if (! Search::add (
-			'blog/post/' . $post->id . '/' . URLify::filter ($post->title),
-			array (
-				'title' => $post->title,
-				'text' => $post->body,
-				'url' => '/blog/post/' . $post->id . '/' . URLify::filter ($post->title)
-			)
-		)) {
-			return $this->error (500, 'An error occurred', Search::$error);
-		}
-	}
-
-	// Check for events
-	if (file_exists ('apps/events')) {
-		$events = Event::query ()
-			->fetch_orig ();
-	
-		foreach ($events as $event) {
-			if (! Search::add (
-				'events/' . $event->id . '/' . URLify::filter ($event->title),
-				array (
-					'title' => $event->title,
-					'text' => $event->details,
-					'url' => '/events/' . $event->id . '/' . URLify::filter ($event->title)
-				)
-			)) {
-			return $this->error (500, 'An error occurred', Search::$error);
-		}
-		}
-	}
-
-	// Check for wiki
-	if (file_exists ('apps/wiki')) {
-		require_once ('apps/wiki/lib/markdown.php');
-		require_once ('apps/wiki/lib/Functions.php');
-
-		$pages = Wiki::query ()
-			->fetch_orig ();
-	
-		foreach ($pages as $page) {
-			if (! Search::add (
-				'wiki/' . $page->id,
-				array (
-					'title' => str_replace ('-', ' ', $page->id),
-					'text' => wiki_parse_body ($page->body),
-					'url' => '/wiki/' . $page->id
-				)
-			)) {
-			return $this->error (500, 'An error occurred', Search::$error);
-		}
+	$conf_list = glob ('apps/*/conf/config.php');
+	foreach ($conf_list as $conf) {
+		$ini = parse_ini_file ($conf, true);
+		if (isset ($ini['Admin']['search'])) {
+			list ($res, $count) = call_user_func ($ini['Admin']['search']);
+			if (! $res) {
+				return $this->error (500, __ ('An error occurred'), Search::$error);
+			}
 		}
 	}
 
