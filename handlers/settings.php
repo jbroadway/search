@@ -1,7 +1,7 @@
 <?php
 
 // keep unauthorized users out
-$this->require_admin ();
+$this->require_acl ('admin', 'settings');
 
 require_once ('apps/admin/lib/Functions.php');
 

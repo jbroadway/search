@@ -1,8 +1,10 @@
 <style> #please-wait { display: none; } </style>
 
 <p>
+	{% if User::require_acl ('settings') %}
 	<a href="/search/settings">{"Settings"}</a>
 	|
+	{% end %}
 	<a href="/search/admin?index=1" onclick="$(this).hide (); $('#please-wait').show ()">{"Run Indexer"}</a>
 	<span id="please-wait">{"Please wait, this may take some time..."}</span>
 </p>
