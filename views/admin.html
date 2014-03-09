@@ -1,5 +1,10 @@
 <style> #please-wait { display: none; } </style>
 
-<p><a href="/search/admin?index=1" onclick="$(this).hide (); $('#please-wait').show ()">{" Click here to update your search index. "}</a><span id="please-wait">{"Please wait, this may take some time..."}</span></p>
+<p>
+	<a href="/search/settings">{"Settings"}</a>
+	|
+	<a href="/search/admin?index=1" onclick="$(this).hide (); $('#please-wait').show ()">{"Run Indexer"}</a>
+	<span id="please-wait">{"Please wait, this may take some time..."}</span>
+</p>
 
-<p>{"Please note: Usually you only have to do this once when you first add search to an existing website."}</p>
+<p>{"Please note: Usually you only have to run the indexer once when you first add search to an existing website."}</p>
