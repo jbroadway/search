@@ -19,12 +19,17 @@ $form->data = array (
 	'backend' => Appconf::search ('Search', 'backend'),
 	'server1_host' => $server1['host'],
 	'server1_port' => $server1['port'],
+	'elastic_index' => Appconf::search ('ElasticSearch', 'index_name'),
 	'public_api_url' => Appconf::search ('IndexTank', 'public_api_url'),
 	'private_api_url' => Appconf::search ('IndexTank', 'private_api_url'),
 	'index_name' => Appconf::search ('IndexTank', 'index_name'),
 	'layouts' => admin_get_layouts (),
 	'backends' => array ('elasticsearch' => 'ElasticSearch', 'indextank' => 'IndexTank')
 );
+
+if ($form->data['elastic_index'] === 'domain') {
+	$form->data['elastic_index'] = preg_replace ('/^www\./', '', $_SERVER['HTTP_HOST']);
+}
 
 echo $form->handle (function ($form) {
 	// merge the new values into the settings
@@ -37,7 +42,8 @@ echo $form->handle (function ($form) {
 			'server1' => array (
 				'host' => $_POST['server1_host'],
 				'port' => $_POST['server1_port']
-			)
+			),
+			'index_name' => $_POST['elastic_index']
 		),
 		'IndexTank' => array (
 			'public_api_url' => $_POST['public_api_url'],

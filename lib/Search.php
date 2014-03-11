@@ -42,11 +42,24 @@ class Search {
 
 				$servers = array ();
 				foreach ($appconf['ElasticSearch'] as $server) {
+					if (! is_array ($server)) {
+						continue;
+					}
 					$servers[] = $server;
+				}
+			
+				if ($appconf['ElasticSearch']['index_name'] === 'domain') {
+					if (preg_match ('/^[a-zA-Z0-9\.-]+$/', $_SERVER['HTTP_HOST'])) {
+						$index = preg_replace ('/^www\./', '', $_SERVER['HTTP_HOST']);
+					} else {
+						$index = 'webpages';
+					}
+				} else {
+					$index = $appconf['ElasticSearch']['index_name'];
 				}
 		
 				self::$client = new Elastica_Client (array ('servers' => $servers));
-				self::$index = self::$client->getIndex ('webpages');
+				self::$index = self::$client->getIndex ($index);
 				break;
 		}
 	}

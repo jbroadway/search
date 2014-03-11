@@ -19,6 +19,8 @@ backend = elasticsearch
 server1[host] = localhost
 server1[port] = 9200
 
+index_name = domain
+
 ; To add additional servers, use:
 
 ;server2[host] = localhost
