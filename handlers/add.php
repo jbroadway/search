@@ -22,7 +22,7 @@ return Search::add (
 	$this->data['page'],
 	array (
 		'title' => $this->data['title'],
-		'text' => $body,
+		'text' => $this->data['body'],
 		'url' => '/' . $this->data['page']
 	)
 );
