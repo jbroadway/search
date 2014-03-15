@@ -45,9 +45,21 @@ class Search {
 					if (! is_array ($server)) {
 						continue;
 					}
+					if (strpos ($server['host'], '@') !== false) {
+						$components = parse_url ($server['host']);
+						$server['host'] = $components['host'];
+						$server['headers'] = array (
+							'Authorization' => 'Basic ' . base64_encode ($components['user'] . ':' . $components['pass']) . '=='
+						);
+						if ($components['scheme'] === 'https') {
+							$server['transport'] => 'https';
+						}
+					}
 					$servers[] = $server;
 				}
 			
+				$config = array ('servers' => $servers);
+
 				if ($appconf['ElasticSearch']['index_name'] === 'domain') {
 					if (preg_match ('/^[a-zA-Z0-9\.-]+$/', $_SERVER['HTTP_HOST'])) {
 						$index = preg_replace ('/^www\./', '', $_SERVER['HTTP_HOST']);
@@ -57,8 +69,8 @@ class Search {
 				} else {
 					$index = $appconf['ElasticSearch']['index_name'];
 				}
-		
-				self::$client = new Elastica_Client (array ('servers' => $servers));
+
+				self::$client = new Elastica_Client ($config);
 				self::$index = self::$client->getIndex ($index);
 				break;
 		}
