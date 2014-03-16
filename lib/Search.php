@@ -52,7 +52,7 @@ class Search {
 							'Authorization' => 'Basic ' . base64_encode ($components['user'] . ':' . $components['pass']) . '=='
 						);
 						if ($components['scheme'] === 'https') {
-							$server['transport'] => 'https';
+							$server['transport'] = 'https';
 						}
 					}
 					$servers[] = $server;
