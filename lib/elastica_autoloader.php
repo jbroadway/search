@@ -1,7 +1,7 @@
 <?php
 
 function __autoload_elastica ($class) {
-	$path = str_replace ('_', '/', $class);
+	$path = str_replace ('\\', '/', trim ($class, '\\'));
 
     if (file_exists ('apps/search/lib/Elastica/lib/' . $path . '.php')) {
         require_once ('apps/search/lib/Elastica/lib/' . $path . '.php');

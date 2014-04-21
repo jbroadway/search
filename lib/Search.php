@@ -33,8 +33,8 @@ class Search {
 		self::$backend = $appconf['Search']['backend'];
 		switch (self::$backend) {
 			case 'indextank':
-				require_once ('apps/search/lib/indextank_client.php');
-				self::$client = new ApiClient ($appconf['IndexTank']['private_api_url']);
+				require_once ('apps/search/lib/indextank.php');
+				self::$client = new Indextank_Api ($appconf['IndexTank']['private_api_url']);
 				self::$index = self::$client->get_index ($appconf['IndexTank']['index_name']);
 				break;
 			case 'elasticsearch':
@@ -70,7 +70,7 @@ class Search {
 					$index = $appconf['ElasticSearch']['index_name'];
 				}
 
-				self::$client = new Elastica_Client ($config);
+				self::$client = new \Elastica\Client ($config);
 				self::$index = self::$client->getIndex ($index);
 				break;
 		}
@@ -113,24 +113,19 @@ class Search {
 				}
 				self::$error = 'Error adding document.';
 				return false;
-				break;
+
 			case 'elasticsearch':
 				$doc['id'] = $page;
 				$type = self::$index->getType ('webpage');
-				$doc = new Elastica_Document ($page, $doc);
+				$doc = new \Elastica\Document ($page, $doc);
 				try {
 					$res = $type->addDocument ($doc);
-				} catch (Elastica_Exception_Client $e) {
+					self::$index->refresh ();
+				} catch (Exception $e) {
 					self::$error = $e->getMessage ();
 					return false;
 				}
-				if ($res->isOk ()) {
-					self::$index->refresh ();
-					return true;
-				}
-				self::$error = $res->getError ();
-				return false;
-				break;
+				return true;
 		}
 	}
 
@@ -146,21 +141,15 @@ class Search {
 				}
 				self::$error = 'Error deleting document.';
 				return false;
-				break;
+
 			case 'elasticsearch':
 				try {
 					$res = self::$client->deleteIds (array ($page), 'webpages', 'webpage');
-				} catch (Elastica_Exception_Client $e) {
+				} catch (Exception $e) {
 					self::$error = $e->getMessage ();
 					return false;
 				}
-				if ($res->isOk ()) {
-					self::$index->refresh ();
-					return true;
-				}
-				self::$error = $res->getError ();
-				return false;
-				break;
+				return true;
 		}
 	}
 }
