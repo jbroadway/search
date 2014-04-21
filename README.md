@@ -41,6 +41,6 @@ wysiwyg editor and choosing "Search: Search Box".
 
 Here are some companies that provide hosted IndexTank services to make it easier to get started:
 
+* [IndexDen](http://indexden.com/)
 * [Searchify](http://www.searchify.com/)
 * [HoundSleuth](http://www.houndsleuth.com/)
-* [IndexTank To Go](http://launch.indextanktogo.com/)
