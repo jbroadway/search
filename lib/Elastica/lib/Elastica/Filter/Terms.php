@@ -1,63 +1,122 @@
 <?php
+
+namespace Elastica\Filter;
+
+use Elastica\Exception\InvalidException;
+
 /**
  * Terms filter
  *
- * @uses Elastica_Query_Abstract
  * @category Xodoa
  * @package Elastica
  * @author Nicolas Ruflin <spam@ruflin.com>
  * @link http://www.elasticsearch.org/guide/reference/query-dsl/terms-filter.html
  */
-class Elastica_Filter_Terms extends Elastica_Filter_Abstract
+class Terms extends AbstractFilter
 {
-	protected $_terms = array();
-	protected $_params = array();
-	protected $_key = '';
+    /**
+     * Terms
+     *
+     * @var array Terms
+     */
+    protected $_terms = array();
 
-	/**
-	 * Creates terms filter
-	 *
-	 * @param string $key Terms key
-	 * @param array $terms Terms values
-	 */
-	public function __construct($key = '', array $terms = array()) {
-		$this->setTerms($key, $terms);
-	}
+    /**
+     * Params
+     *
+     * @var array Params
+     */
+    protected $_params = array();
 
-	/**
-	 * Sets key and terms for the filter
-	 *
-	 * @param string $key Terms key
-	 * @param array $terms Terms for the query.
-	 */
-	public function setTerms($key, array $terms) {
-		$this->_key = $key;
-		$this->_terms = array_values($terms);
-		return $this;
-	}
+    /**
+     * Terms key
+     *
+     * @var string Terms key
+     */
+    protected $_key = '';
 
-	/**
-	 * Adds an additional term to the query
-	 *
-	 * @param string $term Filter term
-	 * @return Elastica_Filter_Abstract Filter object
-	 */
-	public function addTerm($term) {
-		$this->_terms[] = $term;
-		return $this;
-	}
+    /**
+     * Creates terms filter
+     *
+     * @param string $key   Terms key
+     * @param array  $terms Terms values
+     */
+    public function __construct($key = '', array $terms = array())
+    {
+        $this->setTerms($key, $terms);
+    }
 
-	/**
-	 * Convers object to an arrray
-	 *
-	 * @see Elastica_Filter_Abstract::toArray()
-	 * @return array data array
-	 */
-	public function toArray() {
-		if (empty($this->_key)) {
-			throw new Elastica_Exception_Invalid('Terms key has to be set');
-		}
-		$this->_params[$this->_key] = $this->_terms;
-		return array('terms' => $this->_params);
-	}
+    /**
+     * Sets key and terms for the filter
+     *
+     * @param  string                      $key   Terms key
+     * @param  array                       $terms Terms for the query.
+     * @return \Elastica\Filter\Terms
+     */
+    public function setTerms($key, array $terms)
+    {
+        $this->_key = $key;
+        $this->_terms = array_values($terms);
+
+        return $this;
+    }
+
+    /**
+     * Set the lookup parameters for this filter
+     * @param string $key terms key
+     * @param string|\Elastica\Type $type document type from which to fetch the terms values
+     * @param string $id id of the document from which to fetch the terms values
+     * @param string $path the field from which to fetch the values for the filter
+     * @param string|\Elastica\Index $index the index from which to fetch the terms values. Defaults to the current index.
+     * @return \Elastica\Filter\Terms Filter object
+     */
+    public function setLookup($key, $type, $id, $path, $index = NULL)
+    {
+        $this->_key = $key;
+        if ($type instanceof \Elastica\Type) {
+            $type = $type->getName();
+        }
+        $this->_terms = array(
+            'type' => $type,
+            'id' => $id,
+            'path' => $path
+        );
+        if (!is_null($index)) {
+            if ($index instanceof \Elastica\Index) {
+                $index = $index->getName();
+            }
+            $this->_terms['index'] = $index;
+        }
+        return $this;
+    }
+
+    /**
+     * Adds an additional term to the query
+     *
+     * @param  string                      $term Filter term
+     * @return \Elastica\Filter\Terms Filter object
+     */
+    public function addTerm($term)
+    {
+        $this->_terms[] = $term;
+
+        return $this;
+    }
+
+    /**
+     * Converts object to an array
+     *
+     * @see \Elastica\Filter\AbstractFilter::toArray()
+     * @throws \Elastica\Exception\InvalidException
+     * @return array                               data array
+     */
+    public function toArray()
+    {
+        if (empty($this->_key)) {
+            throw new InvalidException('Terms key has to be set');
+        }
+        $this->_params[$this->_key] = $this->_terms;
+
+        return array('terms' => $this->_params);
+    }
 }

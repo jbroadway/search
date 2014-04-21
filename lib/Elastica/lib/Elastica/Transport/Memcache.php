@@ -1,4 +1,13 @@
 <?php
+
+namespace Elastica\Transport;
+
+use Elastica\Exception\InvalidException;
+use Elastica\Exception\PartialShardFailureException;
+use Elastica\Exception\ResponseException;
+use Elastica\Request;
+use Elastica\Response;
+
 /**
  * Elastica Memcache Transport object
  *
@@ -6,70 +15,68 @@
  * @package Elastica
  * @author Nicolas Ruflin <spam@ruflin.com>
  */
-class Elastica_Transport_Memcache extends Elastica_Transport_Abstract {
+class Memcache extends AbstractTransport
+{
+    /**
+     * Makes calls to the elasticsearch server
+     *
+     * @param \Elastica\Request $request
+     * @param  array                               $params Host, Port, ...
+     * @throws \Elastica\Exception\ResponseException
+     * @throws \Elastica\Exception\InvalidException
+     * @return \Elastica\Response                   Response object
+     */
+    public function exec(Request $request, array $params)
+    {
+        $memcache = new \Memcache();
+        $memcache->connect($this->getConnection()->getHost(), $this->getConnection()->getPort());
 
-	/**
-	 * Makes calls to the elasticsearch server
-	 *
-	 * @param string $host Host name
-	 * @param int $port Port number
-	 * @return Elastica_Response Response object
-	 */
-	public function exec(array $params) {
+        // Finds right function name
+        $function = strtolower($request->getMethod());
 
-		$request = $this->getRequest();
+        $data = $request->getData();
 
-		$memcache = new Memcache();
-		$memcache->connect($params['host'], $params['port']);
+        $content = '';
 
-		// Finds right function name
-		$function = strtolower($request->getMethod());
+        if (!empty($data)) {
+            if (is_array($data)) {
+                $content = json_encode($data);
+            } else {
+                $content = $data;
+            }
 
-		$data = $request->getData();
+            // Escaping of / not necessary. Causes problems in base64 encoding of files
+            $content = str_replace('\/', '/', $content);
+        }
 
-		$content = '';
+        $responseString = '';
 
-		if (!empty($data)) {
-			if (is_array($data)) {
-				$content = json_encode($data);
-			} else {
-				$content = $data;
-			}
+        switch ($function) {
+            case 'post':
+            case 'put':
+                $memcache->set($request->getPath(), $content);
+                break;
+            case 'get':
+                $responseString = $memcache->get($request->getPath() . '?source=' . $content);
+                echo $responseString . PHP_EOL;
+                break;
+            case 'delete':
+                break;
+            default:
+                throw new InvalidException('Method ' . $function . ' is not supported in memcache transport');
 
-			// Escaping of / not necessary. Causes problems in base64 encoding of files
-			$content = str_replace('\/', '/', $content);
-		}
+        }
 
-		$responseString = '';
+        $response = new Response($responseString);
 
-		switch($function) {
-			case 'post':
-			case 'put':
-				$memcache->set($request->getPath(), $content);
-				break;
-			case 'get':
-				$responseString = $memcache->get($request->getPath() . '?source=' . $content);
-				echo $responseString . PHP_EOL;
-				break;
-			case 'delete':
-				break;
-			default:
-				throw new Elastica_Exception_Invalid('Method ' . $function . ' is not supported in memcache transport');
+        if ($response->hasError()) {
+            throw new ResponseException($request, $response);
+        }
 
-		}
+        if ($response->hasFailedShards()) {
+            throw new PartialShardFailureException($request, $response);
+        }
 
-
-		$response = new Elastica_Response($responseString);
-
-		if (defined('DEBUG') && DEBUG) {
-			$response->setQueryTime($end - $start);
-			$response->setTransferInfo(curl_getinfo($conn));
-		}
-
-		if ($response->hasError()) {
-			throw new Elastica_Exception_Response($response);
-		}
-
-		return $response;
-	}
+        return $response;
+    }
 }
