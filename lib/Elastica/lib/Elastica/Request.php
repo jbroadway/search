@@ -1,4 +1,8 @@
 <?php
+
+namespace Elastica;
+use Elastica\Exception\InvalidException;
+
 /**
  * Elastica Request object
  *
@@ -6,174 +10,189 @@
  * @package Elastica
  * @author Nicolas Ruflin <spam@ruflin.com>
  */
-class Elastica_Request {
+class Request extends Param
+{
+    const HEAD = 'HEAD';
+    const POST = 'POST';
+    const PUT = 'PUT';
+    const GET = 'GET';
+    const DELETE = 'DELETE';
 
-	const POST = 'POST';
-	const PUT = 'PUT';
-	const GET = 'GET';
-	const DELETE = 'DELETE';
+    /**
+     * @var \Elastica\Connection
+     */
+    protected $_connection;
 
-	protected $_client;
-	protected $_path;
-	protected $_method;
-	protected $_data;
+    /**
+     * Construct
+     *
+     * @param string              $path       Request path
+     * @param string              $method     OPTIONAL Request method (use const's) (default = self::GET)
+     * @param array               $data       OPTIONAL Data array
+     * @param array               $query      OPTIONAL Query params
+     * @param Connection $connection
+     * @return \Elastica\Request OPTIONAL Connection object
+     */
+    public function __construct($path, $method = self::GET, $data = array(), array $query = array(), Connection $connection = null)
+    {
+        $this->setPath($path);
+        $this->setMethod($method);
+        $this->setData($data);
+        $this->setQuery($query);
 
-	/**
-	 * Internal id of last used server. This is used for round robin
-	 *
-	 * @var int Last server id
-	 */
-	protected static $_serverId = null;
+        if ($connection) {
+            $this->setConnection($connection);
+        }
+    }
 
-	/**
-	 * @param Elastica_Client $client
-	 * @param string $path Request path
-	 * @param string $method Request method (use const's)
-	 * @param array $data Data array
-	 */
-	public function __construct(Elastica_Client $client, $path, $method, $data = array()) {
-		$this->_client = $client;
-		$this->_path = $path;
-		$this->_method = $method;
-		$this->_data = $data;
-	}
+    /**
+     * Sets the request method. Use one of the for consts
+     *
+     * @param  string           $method Request method
+     * @return \Elastica\Request Current object
+     */
+    public function setMethod($method)
+    {
+        return $this->setParam('method', $method);
+    }
 
-	/**
-	 * Sets the request method. Use one of the for consts
-	 *
-	 * @param string $method Request method
-	 * @return Elastica_Request Current object
-	 */
-	public function setMethod($method) {
-		$this->_method = $method;
-		return $this;
-	}
+    /**
+     * Get request method
+     *
+     * @return string Request method
+     */
+    public function getMethod()
+    {
+        return $this->getParam('method');
+    }
 
-	/**
-	 * @return string Request method
-	 */
-	public function getMethod() {
-		return $this->_method;
-	}
+    /**
+     * Sets the request data
+     *
+     * @param  array            $data Request data
+     * @return \Elastica\Request
+     */
+    public function setData($data)
+    {
+        return $this->setParam('data', $data);
+    }
 
-	/**
-	 * Sets the request data
-	 *
-	 * @param array $data Request data
-	 */
-	public function setData($data) {
-		$this->_data = $data;
-		return $this;
-	}
+    /**
+     * Return request data
+     *
+     * @return array Request data
+     */
+    public function getData()
+    {
+        return $this->getParam('data');
+    }
 
-	/**
-	 * @return array Request data
-	 */
-	public function getData() {
-		return $this->_data;
-	}
+    /**
+     * Sets the request path
+     *
+     * @param  string           $path Request path
+     * @return \Elastica\Request Current object
+     */
+    public function setPath($path)
+    {
+        return $this->setParam('path', $path);
+    }
 
-	/**
-	 * Sets the request path
-	 *
-	 * @param string $path Request path
-	 * @return Elastica_Request Current object
-	 */
-	public function setPath($path) {
-		$this->_path = $path;
-		return $this;
-	}
+    /**
+     * Return request path
+     *
+     * @return string Request path
+     */
+    public function getPath()
+    {
+        return $this->getParam('path');
+    }
 
-	/**
-	 * @return string Request path
-	 */
-	public function getPath() {
-		return $this->_path;
-	}
+    /**
+     * Return query params
+     *
+     * @return array Query params
+     */
+    public function getQuery()
+    {
+        return $this->getParam('query');
+    }
 
-	/**
-	 * @return Elastica_Client
-	 */
-	public function getClient() {
-		return $this->_client;
-	}
+    /**
+     * @param  array            $query
+     * @return \Elastica\Request
+     */
+    public function setQuery(array $query = array())
+    {
+        return $this->setParam('query', $query);
+    }
 
-	/**
-	 * Returns a specific config key or the whole
-	 * config array if not set
-	 *
-	 * @param string $key Config key
-	 * @return array|string Config value
-	 */
-	public function getConfig($key = '') {
-		return $this->getClient()->getConfig($key);
-	}
+    /**
+     * @param  \Elastica\Connection $connection
+     * @return \Elastica\Request
+     */
+    public function setConnection(Connection $connection)
+    {
+        $this->_connection = $connection;
 
-	/**
-	 * Returns an instance of the transport type
-	 *
-	 * @return Elastica_Transport_Abstract Transport object
-	 * @throws Elastica_Exception_Invalid If invalid transport type
-	 */
-	public function getTransport() {
-		$className = 'Elastica_Transport_' . $this->_client->getConfig('transport');
-		if (!class_exists($className)) {
-			throw new Elastica_Exception_Invalid('Invalid transport');
-		}
+        return $this;
+    }
 
-		return new $className($this);
-	}
+    /**
+     * Return Connection Object
+     *
+     * @throws Exception\InvalidException
+     * @return \Elastica\Connection
+     */
+    public function getConnection()
+    {
+        if (empty($this->_connection)) {
+            throw new InvalidException('No valid connection object set');
+        }
 
-	/**
-	 * Sends request to server
-	 *
-	 * @return Elastica_Response Response object
-	 */
-	public function send() {
-		
-		$transport = $this->getTransport();
+        return $this->_connection;
+    }
 
-		$servers = $this->getClient()->getConfig('servers');
-		
-		/*
+    /**
+     * Sends request to server
+     *
+     * @return \Elastica\Response Response object
+     */
+    public function send()
+    {
+        $transport = $this->getConnection()->getTransportObject();
 
-		// Integration of temp file
-		$dir = sys_get_temp_dir();
-		$name = 'elasticaServers.json';
-		$file = $dir . DIRECTORY_SEPARATOR . $name;
+        // Refactor: Not full toArray needed in exec?
+        return $transport->exec($this, $this->getConnection()->toArray());
+    }
 
-		if (!file_exists($file)) {
-			file_put_contents($file, 'hh');
-			error_log(print_r($this->getClient()->getCluster(), true));
-		}
+    /**
+     * @return array
+     */
+    public function toArray()
+    {
+        $data = $this->getParams();
+        if ($this->_connection) {
+            $data['connection'] = $this->_connection->getParams();
+        }
+        return $data;
+    }
 
-		*/
-		
-		if (empty($servers)) {
-			$params = array(
-				'url' => $this->getClient()->getConfig('url'),
-				'host' => $this->getClient()->getHost(),
-				'port' => $this->getClient()->getPort(),
-				'path' => $this->getClient()->getConfig('path'),
-			);
-			$response = $transport->exec($params);
-		} else {
-	
-			// Set server id for first request (round robin by default)
-			if (is_null(self::$_serverId)) {
-				self::$_serverId = rand(0, count($servers) - 1);
-			} else {
-				self::$_serverId = (self::$_serverId + 1) % count($servers);
-			}
+    /**
+     * Converts request to curl request format
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return json_encode($this->toArray());
+    }
 
-			$server = $servers[self::$_serverId];
-
-			$response = $transport->exec($server);
-		}
-		
-		$log = new Elastica_Log($this->getClient());
-		$log->log($this);
-
-		return $response;
-	}
+    /**
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->toString();
+    }
 }
