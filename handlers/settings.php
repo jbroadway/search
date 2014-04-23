@@ -16,6 +16,7 @@ $form = new Form ('post', $this);
 $server1 = Appconf::search ('ElasticSearch', 'server1');
 $form->data = array (
 	'layout' => Appconf::search ('Search', 'layout'),
+	'title' => Appconf::search ('Search', 'title'),
 	'backend' => Appconf::search ('Search', 'backend'),
 	'server1_host' => $server1['host'],
 	'server1_port' => $server1['port'],
@@ -36,6 +37,7 @@ echo $form->handle (function ($form) {
 	$merged = Appconf::merge ('search', array (
 		'Search' => array (
 			'layout' => $_POST['layout'],
+			'title' => $_POST['title'],
 			'backend' => $_POST['backend']
 		),
 		'ElasticSearch' => array (

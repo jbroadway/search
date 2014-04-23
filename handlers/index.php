@@ -12,6 +12,7 @@ if ($this->cli) {
 switch ($appconf['Search']['backend']) {
 	case 'indextank':
 		if (! $this->internal) {
+			$page->id = 'search';
 			$page->title = i18n_get ('Search');
 			if ($appconf['Search']['layout'] !== 'default') {
 				$page->layout = $appconf['Search']['layout'];

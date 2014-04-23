@@ -2,6 +2,12 @@
 <form method="post" id="{{_form}}">
 
 <p>
+	{"Page title"}:<br />
+	<input type="text" name="title" size="40" value="{{ title|quotes }}" />
+	<span class="notice" id="title-notice">{"You must enter a page title."}</span>
+</p>
+
+<p>
 	{"Page layout"}:<br />
 	<select name="layout">
 	{% foreach layouts %}
@@ -15,7 +21,7 @@
 	{"Type of search engine"}:<br />
 	<select name="backend" id="backend">
 	{% foreach backends as _key, _val %}
-		<option value="{{ _key }}"{% if _key == $data->layout %} selected{% end %}>{{ _val }}</option>
+		<option value="{{ _key }}"{% if _key == $data->backend %} selected{% end %}>{{ _val }}</option>
 	{% end %}
 	</select>
 	<span class="notice" id="backend-notice">{"Please choose the type of search engine."}</span>

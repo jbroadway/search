@@ -6,6 +6,12 @@
 
 layout = default
 
+; The page title of the search results
+
+title = Search
+
+include_in_nav = On
+
 ; To choose a back-end search engine, uncomment one of the following
 ; options:
 
